@@ -1,6 +1,6 @@
 '''
 # Aim: To measure the area of the laser for FLC
-# Name: rough_area_measurement.py
+# Name: laser_code_v1.py
 # Language: Python
 # Date: 5.November 2020
 # Src: https://docs.opencv.org/3.4/d3/d05/tutorial_py_table_of_contents_contours.html
