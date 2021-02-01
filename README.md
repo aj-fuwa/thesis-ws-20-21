@@ -1,8 +1,8 @@
 # thesis-ws-20-21
 GitHub repo for Master Thesis files
 
-base_ip_class.py
-beam_measure.py
-distance_measurement.py
-curve_fitting_for_dist.py
+1. base_ip_class.py
+2. beam_measure.py
+3. distance_measurement.py
+4. curve_fitting_for_dist.py
 
