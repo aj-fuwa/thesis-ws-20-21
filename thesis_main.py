@@ -1,14 +1,19 @@
 '''
 # Name: thesis_main_gui.py
 # Task: Defining the main() for the entire GUI Interface with all functions
-# Date: (Revised) 20.Feb 2021
+# Date: (Revised) 21.Feb 2021
 # Src:  https://doc.qt.io/qtforpython/api.html#basic-modules
+#       https://www.riverbankcomputing.com/static/Docs/PyQt5/api/qtcore/qthread.html#started
+#       https://doc.qt.io/qtforpython/PySide6/QtCore/QThread.html
 #       https://www.techwithtim.net/tutorials/pyqt5-tutorial/basic-gui-application/
-#       https://www.geeksforgeeks.org/pyqt5-change-color-of-push-button/
+#       https://www.geeksforgeeks.org/python-introduction-to-pyqt5/
 #       https://www.pythonforthelab.com/blog/step-by-step-guide-to-building-a-gui/#acquiring-an-image-from-the-gui
+#       https://www.pythonforthelab.com/blog/step-by-step-guide-to-building-a-gui/#signals-and-slots-in-qt
+#       https://realpython.com/python-pyqt-qthread/
 #       https://www.tutorialspoint.com/pyqt/index.htm
 #       https://www.youtube.com/watch?v=G7ffF0U36b0&t=748s
 #       https://www.youtube.com/watch?v=dTDgbx-XelY
+#       https://www.youtube.com/watch?v=dRRpbDFnMHI
 #       ...
 '''
 
@@ -29,6 +34,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from flc_component import FuzzyController
 
+exit_flag = 0
 flc_obj = FuzzyController()
 
 class Ui_MainWindow(object):
@@ -220,9 +226,9 @@ class Ui_MainWindow(object):
         self.stop_c2_button = QtWidgets.QPushButton(self.centralwidget)
         self.stop_c2_button.setGeometry(QtCore.QRect(960, 430, 131, 41))
         self.stop_c2_button.setObjectName("stop_c2_button")
-        self.show_both_button = QtWidgets.QPushButton(self.centralwidget)
-        self.show_both_button.setGeometry(QtCore.QRect(720, 310, 301, 51))
-        self.show_both_button.setObjectName("show_both_button")
+        self.show_keys = QtWidgets.QPushButton(self.centralwidget)
+        self.show_keys.setGeometry(QtCore.QRect(720, 310, 301, 51))
+        self.show_keys.setObjectName("show_keys")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1139, 26))
@@ -248,14 +254,34 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuAbout.menuAction())
 
         self.status_label = QtWidgets.QLabel(self.centralwidget)
-        self.status_label.setGeometry(QtCore.QRect(20, 280, 141, 41))
+        self.status_label.setGeometry(QtCore.QRect(20, 240, 141, 41))
         self.status_label.setFont(font)
         self.status_label.setObjectName("status_label")
 
         self.display_status_label = QtWidgets.QLabel(self.centralwidget)
-        self.display_status_label.setGeometry(QtCore.QRect(150, 280, 141, 41))
+        self.display_status_label.setGeometry(QtCore.QRect(120, 240, 141, 41))
         self.display_status_label.setFont(font)
         self.display_status_label.setObjectName("display_status_label")
+
+        self.cam1_status_label = QtWidgets.QLabel(self.centralwidget)
+        self.cam1_status_label.setGeometry(QtCore.QRect(20, 280, 141, 41))
+        self.cam1_status_label.setFont(font)
+        self.cam1_status_label.setObjectName("cam1_status_label")
+
+        self.cam2_status_label = QtWidgets.QLabel(self.centralwidget)
+        self.cam2_status_label.setGeometry(QtCore.QRect(20, 320, 141, 41))
+        self.cam2_status_label.setFont(font)
+        self.cam2_status_label.setObjectName("cam2_status_label")
+
+        self.display_cam1_status_label = QtWidgets.QLabel(self.centralwidget)
+        self.display_cam1_status_label.setGeometry(QtCore.QRect(120, 280, 141, 41))
+        self.display_cam1_status_label.setFont(font)
+        self.display_cam1_status_label.setObjectName("display_cam1_status_label")
+
+        self.display_cam2_status_label = QtWidgets.QLabel(self.centralwidget)
+        self.display_cam2_status_label.setGeometry(QtCore.QRect(120, 320, 141, 41))
+        self.display_cam2_status_label.setFont(font)
+        self.display_cam2_status_label.setObjectName("display_cam2_status_label")
 
         self.exit_app = QtWidgets.QPushButton(self.centralwidget)
         self.exit_app.setGeometry(QtCore.QRect(180, 360, 141, 41))
@@ -276,6 +302,7 @@ class Ui_MainWindow(object):
         self.start_button.clicked.connect(self.flc_start_button)
         self.stop_button.clicked.connect(self.flc_end_button)
         self.exit_app.clicked.connect(self.exit_appl_button)
+        self.show_keys.clicked.connect(self.show_keys_func)
 
 
     def retranslateUi(self, MainWindow):
@@ -285,11 +312,11 @@ class Ui_MainWindow(object):
         self.credit_label.setText(_translate("MainWindow", "Created By: Aditya Jayanti (Feb 2021)"))
         self.start_button.setText(_translate("MainWindow", "START"))
         self.stop_button.setText(_translate("MainWindow", "STOP"))
-        self.show_c1_button.setText(_translate("MainWindow", "Show Cam 1 Feed"))
-        self.show_c2_button.setText(_translate("MainWindow", "Show Cam 2 Feed"))
+        self.show_c1_button.setText(_translate("MainWindow", "Start Cam 1"))
+        self.show_c2_button.setText(_translate("MainWindow", "Start Cam 2"))
         self.stop_c1_button.setText(_translate("MainWindow", "Stop Cam 1"))
         self.stop_c2_button.setText(_translate("MainWindow", "Stop Cam 2"))
-        self.show_both_button.setText(_translate("MainWindow", "Show both the Cam Feed"))
+        self.show_keys.setText(_translate("MainWindow", "Show Key Shortcuts"))
         self.menuInfo.setTitle(_translate("MainWindow", "Info"))
         self.menuAbout.setTitle(_translate("MainWindow", "About"))
         self.actionAbout_the_Thesis.setText(_translate("MainWindow", "About the Thesis"))
@@ -298,6 +325,10 @@ class Ui_MainWindow(object):
         self.status_label.setText(_translate("Main Window", "Status:"))
         self.display_status_label.setText(_translate("Main Window", "Stopped"))
         self.exit_app.setText(_translate("Main Window", "EXIT APP"))
+        self.cam1_status_label.setText(_translate("Main Window", "Cam 1:"))
+        self.cam2_status_label.setText(_translate("Main Window", "Cam 2:"))
+        self.display_cam1_status_label.setText(_translate("Main Window", "OFF"))
+        self.display_cam2_status_label.setText(_translate("Main Window", "OFF"))
 
 
     # define the function called in EXIT APP to quit
@@ -312,7 +343,7 @@ class Ui_MainWindow(object):
         msg.setWindowTitle("System Info")
         msg.setText("""Click on "Show Details..." to see complete Hardware Information""")
         msg.setIcon(QMessageBox.Information)
-        msg.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
+        msg.setStandardButtons(QMessageBox.Ok)
         msg.setDetailedText("Board: Raspberry Pi 4 Model B (4GB RAM, 32GB SD Card)\n"
                             "Laser: Helium-Neon 4mW Class III-A\n"
                             "Focusing device: Electrostatically-actuated MOEMS Micro-mirror made at HFU\n"
@@ -341,8 +372,8 @@ class Ui_MainWindow(object):
         msg.setWindowTitle("GitHub Link for Code")
         msg.setText("https://github.com/aj-fuwa/thesis-ws-20-21")
         msg.setIcon(QMessageBox.Information)
-        msg.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
-        msg.setDefaultButton(QMessageBox.Cancel)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setDefaultButton(QMessageBox.Ok)
         x = msg.exec_()
 
 
@@ -350,14 +381,15 @@ class Ui_MainWindow(object):
     def flc_start_button(self):
         self.t1.start()
         self.display_status_label.setText("Running")
-        print(self.t1.isRunning())
+        #print(self.t1.isRunning())
 
 
     # define the STOP button function
     def flc_end_button(self):
         self.display_status_label.setText("Stopped")
         self.t1.stop()
-        print(self.t1.isRunning())
+        #print(self.t1.isRunning())
+
 
     # define the EXIT APP button function
     def exit_appl_button(self):
@@ -369,15 +401,28 @@ class Ui_MainWindow(object):
         msg.setDefaultButton(QMessageBox.Cancel)
         ret = msg.exec()
         if (ret == QMessageBox.Yes):
-            self.exit_process()
+            global exit_flag
+            exit_flag = 1
+            #self.exit_process()
         else:
             msg.close()
         x = msg.exec_()
 
 
+    # define the show key shortcuts button function
+    def show_keys_func(self):
+        msg = QMessageBox()
+        msg.setWindowTitle("Shortcut Keys")
+        msg.setIcon(QMessageBox.Information)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setText("Press 'B' Key or 'Stop Cam 1' button to stop Camera 1\n"
+                    "Press 'C' Key or 'Stop Cam 2' button to stop Camera 2\n")
+        x = msg.exec_()
+
+
+
 class Thread_FLC(QThread):
-    #thread_signal = pyqtSignal(int)
-    #flc_obj.setup()
+
     def run(self):
         flc_obj.setup()
         flc_obj.run_flc(48, 36000)
@@ -386,6 +431,7 @@ class Thread_FLC(QThread):
     def stop(self):
         flc_obj.stop_flc()
         print("INFO: FLC QThread stopped...")
+        self.exit()
 
 
 
@@ -397,3 +443,4 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
+
