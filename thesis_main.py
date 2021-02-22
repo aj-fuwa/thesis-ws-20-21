@@ -217,42 +217,60 @@ class Ui_MainWindow(object):
         self.stop_button.setGeometry(QtCore.QRect(20, 360, 141, 41))
         self.stop_button.setObjectName("stop_button")
         self.stop_button.setStyleSheet("background-color:red")
-        self.show_c1_button = QtWidgets.QPushButton(self.centralwidget)
-        self.show_c1_button.setGeometry(QtCore.QRect(630, 200, 131, 41))
-        self.show_c1_button.setObjectName("show_c1_button")
-        self.show_c2_button = QtWidgets.QPushButton(self.centralwidget)
-        self.show_c2_button.setGeometry(QtCore.QRect(630, 430, 131, 41))
-        self.show_c2_button.setObjectName("show_c2_button")
+
+        self.start_c1_button = QtWidgets.QPushButton(self.centralwidget)
+        self.start_c1_button.setGeometry(QtCore.QRect(630, 200, 131, 41))
+        self.start_c1_button.setObjectName("start_c1_button")
+
+        self.start_c2_button = QtWidgets.QPushButton(self.centralwidget)
+        self.start_c2_button.setGeometry(QtCore.QRect(630, 430, 131, 41))
+        self.start_c2_button.setObjectName("start_c2_button")
+
         self.stop_c1_button = QtWidgets.QPushButton(self.centralwidget)
         self.stop_c1_button.setGeometry(QtCore.QRect(960, 200, 131, 41))
         self.stop_c1_button.setObjectName("stop_c1_button")
+
         self.stop_c2_button = QtWidgets.QPushButton(self.centralwidget)
         self.stop_c2_button.setGeometry(QtCore.QRect(960, 430, 131, 41))
         self.stop_c2_button.setObjectName("stop_c2_button")
+
         self.show_keys = QtWidgets.QPushButton(self.centralwidget)
         self.show_keys.setGeometry(QtCore.QRect(720, 310, 301, 51))
         self.show_keys.setObjectName("show_keys")
+
         MainWindow.setCentralWidget(self.centralwidget)
+
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1139, 26))
         self.menubar.setObjectName("menubar")
+
         self.menuInfo = QtWidgets.QMenu(self.menubar)
         self.menuInfo.setObjectName("menuInfo")
+
         self.menuAbout = QtWidgets.QMenu(self.menubar)
         self.menuAbout.setObjectName("menuAbout")
+
         MainWindow.setMenuBar(self.menubar)
+
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
+
         MainWindow.setStatusBar(self.statusbar)
+
         self.actionAbout_the_Thesis = QtWidgets.QAction(MainWindow)
         self.actionAbout_the_Thesis.setObjectName("actionAbout_the_Thesis")
+
         self.actionGo_to_code_GitHub_Repo = QtWidgets.QAction(MainWindow)
         self.actionGo_to_code_GitHub_Repo.setObjectName("actionGo_to_code_GitHub_Repo")
+
         self.actionSystem_Info = QtWidgets.QAction(MainWindow)
         self.actionSystem_Info.setObjectName("actionSystem_Info")
+
         self.menuInfo.addAction(self.actionSystem_Info)
+
         self.menuAbout.addAction(self.actionAbout_the_Thesis)
         self.menuAbout.addAction(self.actionGo_to_code_GitHub_Repo)
+
         self.menubar.addAction(self.menuInfo.menuAction())
         self.menubar.addAction(self.menuAbout.menuAction())
 
@@ -321,8 +339,8 @@ class Ui_MainWindow(object):
         self.credit_label.setText(_translate("MainWindow", "Created By: Aditya Jayanti (Feb 2021)"))
         self.start_button.setText(_translate("MainWindow", "START"))
         self.stop_button.setText(_translate("MainWindow", "STOP"))
-        self.show_c1_button.setText(_translate("MainWindow", "Start Cam 1"))
-        self.show_c2_button.setText(_translate("MainWindow", "Start Cam 2"))
+        self.start_c1_button.setText(_translate("MainWindow", "Start Cam 1"))
+        self.start_c2_button.setText(_translate("MainWindow", "Start Cam 2"))
         self.stop_c1_button.setText(_translate("MainWindow", "Stop Cam 1"))
         self.stop_c2_button.setText(_translate("MainWindow", "Stop Cam 2"))
         self.show_keys.setText(_translate("MainWindow", "Show Key Shortcuts"))
