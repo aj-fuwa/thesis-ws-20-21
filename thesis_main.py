@@ -33,6 +33,9 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from flc_component import FuzzyController
+import cv2 as cv2
+import numpy as np
+from base_ip_class import CameraFunctions
 
 exit_flag = 0
 flc_obj = FuzzyController()
@@ -297,12 +300,18 @@ class Ui_MainWindow(object):
 
         # threads with buttons
         self.t1 = Thread_FLC()
+        self.t2 = Thread_BW()
+        self.t3 = Thread_CD()
 
         # buttons function mapping
         self.start_button.clicked.connect(self.flc_start_button)
         self.stop_button.clicked.connect(self.flc_end_button)
         self.exit_app.clicked.connect(self.exit_appl_button)
         self.show_keys.clicked.connect(self.show_keys_func)
+        self.start_c1_button.clicked.connect(self.start_cam1_func)
+        self.start_c2_button.clicked.connect(self.start_cam2_func)
+        self.stop_c1_button.clicked.connect(self.stop_cam1_func)
+        self.stop_c2_button.clicked.connect(self.stop_cam2_func)
 
 
     def retranslateUi(self, MainWindow):
@@ -420,6 +429,25 @@ class Ui_MainWindow(object):
         x = msg.exec_()
 
 
+    def start_cam1_func(self):
+        self.display_cam1_status_label.setText(QtCore.QCoreApplication.translate("Main Window", "ON"))
+        self.t2.start()
+
+
+    def start_cam2_func(self):
+        self.display_cam2_status_label.setText(QtCore.QCoreApplication.translate("Main Window", "ON"))
+        self.t3.start()
+
+
+    def stop_cam1_func(self):
+        self.display_cam1_status_label.setText(QtCore.QCoreApplication.translate("Main Window", "OFF"))
+        self.t2.stop()
+
+
+    def stop_cam2_func(self):
+        self.display_cam2_status_label.setText(QtCore.QCoreApplication.translate("Main Window", "OFF"))
+        self.t3.stop()
+
 
 class Thread_FLC(QThread):
 
@@ -433,6 +461,86 @@ class Thread_FLC(QThread):
         print("INFO: FLC QThread stopped...")
         self.exit()
 
+
+class Thread_BW(QThread):
+    cam = CameraFunctions()
+    lower = np.array([0, 0, 255])  # for ppt
+    upper = np.array([153, 28, 255])  # for ppt
+    print("INFO: Camera 1 - Beam Measure Thread created...")
+    cam.set_hsv_values(lower_val=lower, upper_val=upper)
+    print("INFO: Camera 1 ON. Thread running...")
+    def run(self):
+        self.ThreadActive = True
+        self.cap = cv2.VideoCapture(0)
+        while(self.ThreadActive):
+            ret, frame_og = self.cap.read()
+            ret_contours, ret_hierarchy, self.frame = self.cam.get_contours(frame=frame_og)
+            contour_area, contour_count = self.cam.show_contour_area(ret_contours, self.frame)
+
+            # Draw a rectangle around the Beam Width and display Beam Area
+            x, y, w, h = cv2.boundingRect(contour_count)
+            cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.putText(self.frame, 'Box Area=' + str(contour_area), (60, 90), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 255, 0), 1,
+                        cv2.LINE_AA)
+
+            # Display the frame
+            cv2.imshow("Cam 1 Window- Beam Width", self.frame)
+
+            # Press B to stop Beam Measuring
+            if cv2.waitKey(1) & 0xFF == ord('b'):
+                print("ALERT: B key pressed. Stopping running of Beam Measure...")
+                break
+            # Exit procedure
+        self.cap.release()
+        cv2.destroyAllWindows()
+
+
+    def stop(self):
+        self.ThreadActive = False
+        print("ALERT: Cam 1 thread stopped...")
+        self.exit()
+
+
+class Thread_CD(QThread):
+    cam = CameraFunctions()
+    lower = np.array([20, 100, 100])  # sof values
+    upper = np.array([30, 255, 255])  # sof values
+    print("INFO: Camera 2 - Distance Measurement Thread created...")
+    cam.set_hsv_values(lower_val=lower, upper_val=upper)
+    print("INFO: Camera 2 ON. Thread running...")
+    def run(self):
+        self.ThreadActive = True
+        cap = cv2.VideoCapture(1)
+        while(self.ThreadActive):
+            ret, frame_og = cap.read()
+            ret_contours, ret_hierarchy, self.frame = self.cam.get_contours(frame=frame_og)
+            x, y = self.cam.get_centroid_point(ret_contours)
+
+            # Draw the centroid point on the frame
+            cv2.circle(self.frame, (x, y), 5, (0, 0, 255), -1)
+            cv2.putText(self.frame, "centroid", (x - 25, y - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
+            # calculate distance
+            contour_area, contour_count = self.cam.show_contour_area(ret_contours, self.frame)
+            dist = self.cam.get_distance(contour_count, self.frame)
+            self.frame = cv2.putText(self.frame, str(dist), (80, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+
+            # show the scale markings on the frame
+            self.cam.draw_scales_(self.frame)
+            cv2.imshow("Cam 2 Window - Distance Measurement", self.frame)
+
+            # Press C to stop Distance Measuring
+            if cv2.waitKey(1) & 0xFF == ord('c'):
+                print("ALERT: C key pressed. Stopping running of Distance Measure...")
+                break
+            # Exit procedure
+        cap.release()
+        cv2.destroyAllWindows()
+
+    def stop(self):
+        self.ThreadActive = False
+        print("ALERT: Cam 2 thread stopped...")
+        self.exit()
 
 
 if __name__ == "__main__":
