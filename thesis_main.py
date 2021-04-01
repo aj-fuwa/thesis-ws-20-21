@@ -1,7 +1,8 @@
 '''
 # Name: thesis_main_gui.py
 # Task: Defining the main() for the entire GUI Interface with all functions
-# Date: (Revised) 21.Feb 2021
+# Date: (Revised) 22.Feb 2021
+# Files associated: flc_component.py, base_ip_class.py
 # Src:  https://doc.qt.io/qtforpython/api.html#basic-modules
 #       https://www.riverbankcomputing.com/static/Docs/PyQt5/api/qtcore/qthread.html#started
 #       https://doc.qt.io/qtforpython/PySide6/QtCore/QThread.html
@@ -14,8 +15,12 @@
 #       https://www.youtube.com/watch?v=G7ffF0U36b0&t=748s
 #       https://www.youtube.com/watch?v=dTDgbx-XelY
 #       https://www.youtube.com/watch?v=dRRpbDFnMHI
+#       https://github.com/scrapy/queuelib
+#       https://gpiozero.readthedocs.io/en/stable/api_pins.html#gpiozero.pins.rpigpio.RPiGPIOFactory
+#       https://pimylifeup.com/raspberry-pi-gpio/
 #       ...
 '''
+
 
 # -*- coding: utf-8 -*-
 
@@ -36,9 +41,20 @@ from flc_component import FuzzyController
 import cv2 as cv2
 import numpy as np
 from base_ip_class import CameraFunctions
+from queuelib import FifoDiskQueue
+import gpiozero as gpio
 
-exit_flag = 0
+
+q_t1 = FifoDiskQueue("queue_thread1")   # storing values from the FLC - Pin Map
+q_t2 = FifoDiskQueue("queue_thread2")   # storing values from the Cam 1 Beam-Width - Pin Map
+q_t3 = FifoDiskQueue("queue_thread3")   # storing values from the Cam 2 Dist-Meas - Pin Map
+
+
+exit_flag = 0   # TODO: for EXIT APP button. Check !!!
+
+
 flc_obj = FuzzyController()
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -219,24 +235,32 @@ class Ui_MainWindow(object):
         self.stop_button.setStyleSheet("background-color:red")
 
         self.start_c1_button = QtWidgets.QPushButton(self.centralwidget)
-        self.start_c1_button.setGeometry(QtCore.QRect(630, 200, 131, 41))
+        self.start_c1_button.setGeometry(QtCore.QRect(720, 200, 131, 41))
         self.start_c1_button.setObjectName("start_c1_button")
 
         self.start_c2_button = QtWidgets.QPushButton(self.centralwidget)
-        self.start_c2_button.setGeometry(QtCore.QRect(630, 430, 131, 41))
+        self.start_c2_button.setGeometry(QtCore.QRect(720, 310, 131, 41))
         self.start_c2_button.setObjectName("start_c2_button")
+
+        self.start_flc_button = QtWidgets.QPushButton(self.centralwidget)
+        self.start_flc_button.setGeometry(QtCore.QRect(720, 430, 131, 41))
+        self.start_flc_button.setObjectName("start_flc_button")
 
         self.stop_c1_button = QtWidgets.QPushButton(self.centralwidget)
         self.stop_c1_button.setGeometry(QtCore.QRect(960, 200, 131, 41))
         self.stop_c1_button.setObjectName("stop_c1_button")
 
         self.stop_c2_button = QtWidgets.QPushButton(self.centralwidget)
-        self.stop_c2_button.setGeometry(QtCore.QRect(960, 430, 131, 41))
+        self.stop_c2_button.setGeometry(QtCore.QRect(960, 310, 131, 41))
         self.stop_c2_button.setObjectName("stop_c2_button")
 
-        self.show_keys = QtWidgets.QPushButton(self.centralwidget)
-        self.show_keys.setGeometry(QtCore.QRect(720, 310, 301, 51))
-        self.show_keys.setObjectName("show_keys")
+        self.stop_flc_button = QtWidgets.QPushButton(self.centralwidget)
+        self.stop_flc_button.setGeometry(QtCore.QRect(960, 430, 131, 41))
+        self.stop_flc_button.setObjectName("stop_flc_button")
+
+        #self.show_keys = QtWidgets.QPushButton(self.centralwidget)
+        #self.show_keys.setGeometry(QtCore.QRect(720, 310, 301, 51))
+        #self.show_keys.setObjectName("show_keys")
 
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -250,6 +274,9 @@ class Ui_MainWindow(object):
         self.menuAbout = QtWidgets.QMenu(self.menubar)
         self.menuAbout.setObjectName("menuAbout")
 
+        self.menuHelp = QtWidgets.QMenu(self.menubar)
+        self.menuHelp.setObjectName("menuHelp")
+
         MainWindow.setMenuBar(self.menubar)
 
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -261,18 +288,27 @@ class Ui_MainWindow(object):
         self.actionAbout_the_Thesis.setObjectName("actionAbout_the_Thesis")
 
         self.actionGo_to_code_GitHub_Repo = QtWidgets.QAction(MainWindow)
-        self.actionGo_to_code_GitHub_Repo.setObjectName("actionGo_to_code_GitHub_Repo")
+        self.actionGo_to_code_GitHub_Repo.setObjectName(
+				"actionGo_to_code_GitHub_Repo")
 
         self.actionSystem_Info = QtWidgets.QAction(MainWindow)
         self.actionSystem_Info.setObjectName("actionSystem_Info")
 
+        self.actionHow_this_works = QtWidgets.QAction(MainWindow)
+        self.actionHow_this_works.setObjectName("actionHow_this_works")
+
         self.menuInfo.addAction(self.actionSystem_Info)
 
         self.menuAbout.addAction(self.actionAbout_the_Thesis)
-        self.menuAbout.addAction(self.actionGo_to_code_GitHub_Repo)
+        self.menuAbout.addAction(
+			self.actionGo_to_code_GitHub_Repo)
+
+        self.menuHelp.addAction(self.actionHow_this_works)
 
         self.menubar.addAction(self.menuInfo.menuAction())
         self.menubar.addAction(self.menuAbout.menuAction())
+
+        self.menubar.addAction(self.menuHelp.menuAction())
 
         self.status_label = QtWidgets.QLabel(self.centralwidget)
         self.status_label.setGeometry(QtCore.QRect(20, 240, 141, 41))
@@ -297,16 +333,34 @@ class Ui_MainWindow(object):
         self.display_cam1_status_label = QtWidgets.QLabel(self.centralwidget)
         self.display_cam1_status_label.setGeometry(QtCore.QRect(120, 280, 141, 41))
         self.display_cam1_status_label.setFont(font)
-        self.display_cam1_status_label.setObjectName("display_cam1_status_label")
+        self.display_cam1_status_label.setObjectName(
+					"display_cam1_status_label")
 
         self.display_cam2_status_label = QtWidgets.QLabel(self.centralwidget)
         self.display_cam2_status_label.setGeometry(QtCore.QRect(120, 320, 141, 41))
         self.display_cam2_status_label.setFont(font)
-        self.display_cam2_status_label.setObjectName("display_cam2_status_label")
+        self.display_cam2_status_label.setObjectName(
+					"display_cam2_status_label")
 
-        self.exit_app = QtWidgets.QPushButton(self.centralwidget)
-        self.exit_app.setGeometry(QtCore.QRect(180, 360, 141, 41))
-        self.exit_app.setObjectName("exit_app")
+        self.rhs_label = QtWidgets.QLabel(self.centralwidget)
+        self.rhs_label.setGeometry(QtCore.QRect(650, 130, 200, 41))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.rhs_label.setFont(font)
+        self.rhs_label.setScaledContents(True)
+        self.rhs_label.setObjectName("rhs_label")
+
+        self.lhs_label = QtWidgets.QLabel(self.centralwidget)
+        self.lhs_label.setGeometry(QtCore.QRect(20, 130, 200, 41))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.lhs_label.setFont(font)
+        self.lhs_label.setScaledContents(True)
+        self.lhs_label.setObjectName("lhs_label")
+
+        #self.exit_app = QtWidgets.QPushButton(self.centralwidget)
+        #self.exit_app.setGeometry(QtCore.QRect(180, 360, 141, 41))
+        #self.exit_app.setObjectName("exit_app")
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -315,6 +369,7 @@ class Ui_MainWindow(object):
         self.actionGo_to_code_GitHub_Repo.triggered.connect(lambda : self.show_about_gotocode())
         self.actionSystem_Info.triggered.connect(lambda : self.show_sys_info())
         self.actionAbout_the_Thesis.triggered.connect(lambda : self.show_about_thesis())
+        self.actionHow_this_works.triggered.connect(lambda: self.how_this_works())
 
         # threads with buttons
         self.t1 = Thread_FLC()
@@ -322,46 +377,67 @@ class Ui_MainWindow(object):
         self.t3 = Thread_CD()
 
         # buttons function mapping
-        self.start_button.clicked.connect(self.flc_start_button)
-        self.stop_button.clicked.connect(self.flc_end_button)
-        self.exit_app.clicked.connect(self.exit_appl_button)
-        self.show_keys.clicked.connect(self.show_keys_func)
+        self.start_button.clicked.connect(self.auto_start_func)
+        self.stop_button.clicked.connect(self.auto_stop_func)
+        #self.exit_app.clicked.connect(self.exit_appl_button)
+        #self.show_keys.clicked.connect(self.show_keys_func)
         self.start_c1_button.clicked.connect(self.start_cam1_func)
         self.start_c2_button.clicked.connect(self.start_cam2_func)
         self.stop_c1_button.clicked.connect(self.stop_cam1_func)
         self.stop_c2_button.clicked.connect(self.stop_cam2_func)
+        self.start_flc_button.clicked.connect(self.flc_start_button)
+        self.stop_flc_button.clicked.connect(self.flc_end_button)
 
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Main Window"))
         self.title_label.setText(_translate("MainWindow", "Dynamic Focusing Control using MOEMS "))
         self.credit_label.setText(_translate("MainWindow", "Created By: Aditya Jayanti (Feb 2021)"))
-        self.start_button.setText(_translate("MainWindow", "START"))
-        self.stop_button.setText(_translate("MainWindow", "STOP"))
+        self.start_button.setText(_translate("MainWindow", "START APP"))
+        self.stop_button.setText(_translate("MainWindow", "STOP APP"))
         self.start_c1_button.setText(_translate("MainWindow", "Start Cam 1"))
         self.start_c2_button.setText(_translate("MainWindow", "Start Cam 2"))
         self.stop_c1_button.setText(_translate("MainWindow", "Stop Cam 1"))
         self.stop_c2_button.setText(_translate("MainWindow", "Stop Cam 2"))
-        self.show_keys.setText(_translate("MainWindow", "Show Key Shortcuts"))
+        #self.show_keys.setText(_translate("MainWindow", "Show Key Shortcuts"))
         self.menuInfo.setTitle(_translate("MainWindow", "Info"))
         self.menuAbout.setTitle(_translate("MainWindow", "About"))
         self.actionAbout_the_Thesis.setText(_translate("MainWindow", "About the Thesis"))
         self.actionGo_to_code_GitHub_Repo.setText(_translate("MainWindow", "Go to code"))
         self.actionSystem_Info.setText(_translate("MainWindow", "System Info"))
-        self.status_label.setText(_translate("Main Window", "Status:"))
+        self.status_label.setText(_translate("Main Window", "FLC:"))
         self.display_status_label.setText(_translate("Main Window", "Stopped"))
-        self.exit_app.setText(_translate("Main Window", "EXIT APP"))
+        #self.exit_app.setText(_translate("Main Window", "EXIT APP"))
         self.cam1_status_label.setText(_translate("Main Window", "Cam 1:"))
         self.cam2_status_label.setText(_translate("Main Window", "Cam 2:"))
         self.display_cam1_status_label.setText(_translate("Main Window", "OFF"))
         self.display_cam2_status_label.setText(_translate("Main Window", "OFF"))
+        self.menuHelp.setTitle(_translate("Main Window", "Help"))
+        self.actionHow_this_works.setText(_translate("MainWindow", "How this works?"))
+        self.start_flc_button.setText(_translate("MainWindow", "Start FLC"))
+        self.stop_flc_button.setText(_translate("MainWindow", "Stop FLC"))
+        self.rhs_label.setText(_translate("MainWindow", "Manual Operation:"))
+        self.lhs_label.setText(_translate("MainWindow", "Direct Operation:"))
 
 
     # define the function called in EXIT APP to quit
-    def exit_process(self):
-        print("ALERT: Main application Window closed...")
-        self.close()
+    #def exit_process(self):
+    #    print("ALERT: Main application Window closed...")
+    #    self.close()
+
+    # define How this works? option
+    def how_this_works(self):   # function for How this works menu-option
+        msg = QMessageBox()
+        msg.setWindowTitle("How this GUI works?")
+        msg.setText("There are two ways to use this GUI: \n\n"
+                    "First way: Click the green Start App button to start the Cameras and the FLC. "
+                    "Click red Stop App button to stop the Cameras and the FLC\n\n"
+                    "Second way: To switch on and off all the components individually, click on the buttons on the right hand side\n"
+                    "(Shortcuts for cameras: Press B key to stop Cam 1, press C key to stop Cam 2)")
+        msg.setIcon(QMessageBox.Information)
+        msg.setStandardButtons(QMessageBox.Ok)
+        x = msg.exec_()
 
 
     # define System Info menu option
@@ -371,10 +447,11 @@ class Ui_MainWindow(object):
         msg.setText("""Click on "Show Details..." to see complete Hardware Information""")
         msg.setIcon(QMessageBox.Information)
         msg.setStandardButtons(QMessageBox.Ok)
-        msg.setDetailedText("Board: Raspberry Pi 4 Model B (4GB RAM, 32GB SD Card)\n"
-                            "Laser: Helium-Neon 4mW Class III-A\n"
-                            "Focusing device: Electrostatically-actuated MOEMS Micro-mirror made at HFU\n"
-                            "Amplifier: Linear Piezo Amplifier IN:0-12V OUT:>200V\n")
+        msg.setDetailedText(
+        "Board: Raspberry Pi 4 Model B (4GB RAM, 32GB SD Card)\n"
+        "Laser: Helium-Neon 4mW Class III-A\n"
+        "Focusing device: Electrostatically-actuated MOEMS Micro-mirror made at HFU\n"
+        "Amplifier: Linear Piezo Amplifier IN:0-12V OUT:>200V\n")
         x = msg.exec_()
 
 
@@ -418,7 +495,8 @@ class Ui_MainWindow(object):
         #print(self.t1.isRunning())
 
 
-    # define the EXIT APP button function
+    '''# define the EXIT APP button function
+    # TODO: Button does not exit the code properly. Thread problems. Check!!!
     def exit_appl_button(self):
         msg = QMessageBox()
         msg.setWindowTitle("Exit Confirmation")
@@ -433,7 +511,7 @@ class Ui_MainWindow(object):
             #self.exit_process()
         else:
             msg.close()
-        x = msg.exec_()
+        x = msg.exec_()'''
 
 
     # define the show key shortcuts button function
@@ -466,13 +544,45 @@ class Ui_MainWindow(object):
         self.display_cam2_status_label.setText(QtCore.QCoreApplication.translate("Main Window", "OFF"))
         self.t3.stop()
 
+    def auto_start_func(self):
+        self.display_cam1_status_label.setText(QtCore.QCoreApplication.translate("Main Window", "ON"))
+        self.display_cam2_status_label.setText(QtCore.QCoreApplication.translate("Main Window", "ON"))
+        self.display_status_label.setText("Running")
+        self.t1.start()
+        self.t2.start()
+        self.t3.start()
 
-class Thread_FLC(QThread):
+    def auto_stop_func(self):
+        self.display_cam1_status_label.setText(QtCore.QCoreApplication.translate("Main Window", "OFF"))
+        self.display_cam2_status_label.setText(QtCore.QCoreApplication.translate("Main Window", "OFF"))
+        self.display_status_label.setText("Stopped")
+        self.t1.stop()
+        self.t2.stop()
+        self.t3.stop()
+    class Thread_FLC(QThread):
 
     def run(self):
-        flc_obj.setup()
-        flc_obj.run_flc(48, 36000)
         print("INFO: FLC QThread running....")
+
+        flc_obj.setup()
+
+        # pop the values of obtained from Cam 1 and Cam 2
+        #   from their respective FIFO queues
+        val1 = q_t2.pop()
+        val2 = q_t3.pop()
+
+        flc_obj.run_flc(val2, val1)
+
+        send_out = flc_obj.crisp_output
+
+        # call the global FIFO queue for storing defuzzified output
+        #   and push the obtained value so that the it can be
+        #   sent to R-Pi
+        global q_t1
+        q_t1.push(str(send_out))
+
+        # TODO: gpiozero not working. Version mismatch on both machines.
+        #       Therefore, the voltage select pins are not set on the R-Pi
 
     def stop(self):
         flc_obj.stop_flc()
@@ -500,6 +610,15 @@ class Thread_BW(QThread):
             cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.putText(self.frame, 'Box Area=' + str(contour_area), (60, 90), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 255, 0), 1,
                         cv2.LINE_AA)
+
+            # Filter-out the error values ans send out only the valid ones
+            if (contour_area > 24000 or contour_area < 75000):
+                snd_bw = contour_area
+                # call the global FIFO queue for storing Cam 1 output
+                #   and push the obtained value so that the it can be
+                #   used by the FLC
+                global q_t2
+                q_t2.push(str(snd_bw))
 
             # Display the frame
             cv2.imshow("Cam 1 Window- Beam Width", self.frame)
@@ -543,6 +662,13 @@ class Thread_CD(QThread):
             dist = self.cam.get_distance(contour_count, self.frame)
             self.frame = cv2.putText(self.frame, str(dist), (80, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
+            # call the global FIFO queue for storing Cam 2 output
+            #   and push the obtained value so that the it can be
+            #   used by the FLC
+            snd_dist = dist
+            global q_t3
+            q_t3.push(str(snd_dist))
+
             # show the scale markings on the frame
             self.cam.draw_scales_(self.frame)
             cv2.imshow("Cam 2 Window - Distance Measurement", self.frame)
@@ -560,7 +686,6 @@ class Thread_CD(QThread):
         print("ALERT: Cam 2 thread stopped...")
         self.exit()
 
-
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
@@ -569,4 +694,3 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
-
