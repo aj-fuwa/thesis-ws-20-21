@@ -1,8 +1,12 @@
 '''
 # Name: flc_component.py
 # Task: Defining the class where the FLC action takes place
-# Date: (Revised) 20.Feb 2021
+# Date: (Revised) 29.Mar 2021
 # Src:  https://pythonhosted.org/scikit-fuzzy/userguide/fuzzy_control_primer.html
+#       https://pythonhosted.org/scikit-fuzzy/auto_examples/plot_tipping_problem.html
+#       https://pythonhosted.org/scikit-fuzzy/auto_examples/plot_control_system_advanced.html
+#       https://pythonhosted.org/scikit-fuzzy/auto_examples/plot_tipping_problem_newapi.html
+#       https://pythonhosted.org/scikit-fuzzy/auto_examples/plot_defuzzify.html#example-plot-defuzzify-py
 '''
 import numpy as np
 import skfuzzy as fuzz
@@ -10,116 +14,89 @@ import matplotlib.pyplot as plt
 from skfuzzy import control as ctrl
 
 class FuzzyController():
-    # inputs and output definition
-    cam_dist = 0    # input 1/Antecedent
-    beam_width = 0  # input 2/Antecedent
-    out = 0         # output/Consequent
-
-    # rule-set variables
-    rule1 = 0
-    rule2 = 0
-    rule3 = 0
-    rule4 = 0
-    rule5 = 0
-    rule6 = 0
-    rule7 = 0
-    rule8 = 0
-    rule9 = 0
-
-    # control system
-    dyn_focus_ctrl = 0
-    dyn_focus_ctrl_sim = 0
 
     def __init__(self):
-        self.cam_dist = 0
-        self.beam_width = 0
-        self.out = 0
-        self.rule1 = 0
-        self.rule2 = 0
-        self.rule3 = 0
-        self.rule4 = 0
-        self.rule5 = 0
-        self.rule6 = 0
-        self.rule7 = 0
-        self.rule8 = 0
-        self.rule9 = 0
-        self.dyn_focus_ctrl = 0
-        self.dyn_focus_ctrl_sim = 0
+        self.crisp_output = 0
         print("INFO: FuzzyController() object created")
 
     def setup(self):    # setup the main FLC parameters
-        self.cam_dist = ctrl.Antecedent(np.arange(0, 51, 1), "cam_dist")    # 0 cms to 50 cms with step-size 1
-        self.beam_width = ctrl.Antecedent(np.array([79000, 73000, 58000, 50000, 43000, 34000, 25000]), "beam_width")
-                                        # temporary beam width area values; 50k is the middle-point calculated on paper
-        self.out = ctrl.Consequent(np.array([2, 4, 6]), "out")  # volt values 0-2V
+        # get the data ranges for all parameters
+        self.v_bw = np.array([79000, 73000, 58000, 50000, 43000, 34000, 25000])
+        self.v_cd = np.arange(0, 51, 1)
+        self.v_out = np.array([0, 1, 2])
 
         # create the membership functions
-        self.cam_dist["Near"] = fuzz.trimf(self.cam_dist.universe, [0, 0, 25])
-        self.cam_dist["Far"] = fuzz.trimf(self.cam_dist.universe, [0, 25, 50])
-        self.cam_dist["Very Far"] = fuzz.trimf(self.cam_dist.universe, [25, 50, 50])
+        self.bw_l = fuzz.trimf(self.v_bw, [25000, 25000, 50000])
+        self.bw_xl = fuzz.trimf(self.v_bw, [25000, 50000, 79000])
+        self.bw_xxl = fuzz.trimf(self.v_bw, [50000, 79000, 79000])
 
-        self.beam_width["Large"] = fuzz.trimf(self.beam_width.universe, [25000, 25000, 50000])
-        self.beam_width["X-Large"] = fuzz.trimf(self.beam_width.universe, [25000, 50000, 79000])
-        self.beam_width["XX-Large"] = fuzz.trimf(self.beam_width.universe, [50000, 79000, 79000])
+        self.cd_n = fuzz.trimf(self.v_cd, [0, 0, 25])
+        self.cd_f = fuzz.trimf(self.v_cd, [0, 25, 50])
+        self.cd_vf = fuzz.trimf(self.v_cd, [25, 50, 50])
 
-        self.out["Low"] = fuzz.trimf(self.out.universe, [2, 2, 4])
-        self.out["Mid"] = fuzz.trimf(self.out.universe, [2, 4, 6])
-        self.out["High"] = fuzz.trimf(self.out.universe, [4, 6, 6])
+        self.out_low = fuzz.trimf(self.v_out, [0, 0, 1])
+        self.out_med = fuzz.trimf(self.v_out, [0, 1, 2])
+        self.out_high = fuzz.trimf(self.v_out, [1, 2, 2])
 
-        # save the plots
-        self.cam_dist.view()
-        plt.savefig("cam_dist_mf.png")
-        self.beam_width.view()
+        # plot the membership functions and save the plots
+        self.fig, (self.p0, self.p1, self.p2) = plt.subplots(nrows=3, figsize=(10, 10))
+        self.p0.set_title("Beam Width")
+        self.p0.plot(self.v_bw, self.bw_l, 'r', label="Large")
+        self.p0.plot(self.v_bw, self.bw_xl, 'g', label="Extra Large")
+        self.p0.plot(self.v_bw, self.bw_xxl, 'b', label="Extra Extra Large")
+        self.p0.legend()
         plt.savefig("beam_width_mf.png")
-        self.out.view()
+
+        self.p1.set_title("Cam Dist")
+        self.p1.plot(self.v_cd, self.cd_n, 'r', label="Near")
+        self.p1.plot(self.v_cd, self.cd_f, 'g', label="Far")
+        self.p1.plot(self.v_cd, self.cd_vf, 'b', label="Very Far")
+        self.p1.legend()
+        plt.savefig("cam_dist_mf.png")
+
+        self.p2.set_title("Out Voltage")
+        self.p2.plot(self.v_out, self.out_low, 'r', label="Low")
+        self.p2.plot(self.v_out, self.out_med, 'g', label="Medium")
+        self.p2.plot(self.v_out, self.out_high, 'b', label="High")
+        self.p2.legend()
         plt.savefig("out_mf.png")
-
-        # define the rules
-        self.rule1 = ctrl.Rule(self.cam_dist["Near"] | self.beam_width["Large"], self.out["Low"])
-        self.rule2 = ctrl.Rule(self.cam_dist["Near"] | self.beam_width["X-Large"], self.out["Mid"])
-        self.rule3 = ctrl.Rule(self.cam_dist["Near"] | self.beam_width["XX-Large"], self.out["Mid"])
-
-        self.rule4 = ctrl.Rule(self.cam_dist["Far"] | self.beam_width["Large"], self.out["Low"])
-        self.rule5 = ctrl.Rule(self.cam_dist["Far"] | self.beam_width["X-Large"], self.out["Mid"])
-        self.rule6 = ctrl.Rule(self.cam_dist["Far"] | self.beam_width["XX-Large"], self.out["Mid"])
-
-        self.rule7 = ctrl.Rule(self.cam_dist["Very Far"] | self.beam_width["Large"], self.out["Low"])
-        self.rule8 = ctrl.Rule(self.cam_dist["Very Far"] | self.beam_width["X-Large"], self.out["Mid"])
-        self.rule9 = ctrl.Rule(self.cam_dist["Very Far"] | self.beam_width["XX-Large"], self.out["High"])
-
-        # TODO: Add rule-set view plots later and save them
-
-        # define the control system with the defined rule-set
-        self.dyn_focus_ctrl = ctrl.ControlSystem([self.rule1, self.rule2, self.rule3, self.rule4])
-
-        # simulate the control system so that we can apply inputs to the control system
-        self.dyn_focus_ctrl_sim = ctrl.ControlSystemSimulation(self.dyn_focus_ctrl)
 
         print("INFO: FLC setup complete")
 
     def run_flc(self, input1_cd, input2_bw):
+        # find the degree of membership for the given input values for both the input params
+        self.bw_l_act = fuzz.interp_membership(self.v_bw, self.bw_l, input2_bw)
+        self.bw_xl_act = fuzz.interp_membership(self.v_bw, self.bw_xl, input2_bw)
+        self.bw_xxl_act = fuzz.interp_membership(self.v_bw, self.bw_xxl, input2_bw)
+
+        self.cd_n_act = fuzz.interp_membership(self.v_cd, self.cd_n, input1_cd)
+        self.cd_f_act = fuzz.interp_membership(self.v_cd, self.cd_f, input1_cd)
+        self.cd_vf_act = fuzz.interp_membership(self.v_cd, self.cd_vf, input1_cd)
+
+        # get the rule activation for each rule
+        self.rule1_activation = np.fmin(self.bw_l_act, self.out_low)
+
+        self.rule2_activation = np.fmin(self.bw_xl_act, self.out_med)
+
+        self.rule3_activation = np.fmin(np.fmin(self.bw_xxl_act, self.cd_n_act), self.out_high)
+
+        self.rule4_activation = np.fmin(np.fmin(self.bw_xxl_act, self.cd_f_act), self.out_med)
+
+        self.rule5_activation = np.fmin(np.fmin(self.bw_xxl_act, self.cd_vf_act), self.out_med)
+
+        # get the aggregrate. This is where all the output membership functions must be combined
+        self.agg_out_mf = np.fmax(self.rule1_activation,
+           np.fmax(self.rule2_activation,
+           np.fmax(self.rule3_activation,
+           np.fmax(self.rule4_activation, 
+			self.rule5_activation))))
+
         print("INFO: FLC running now...")
-        # feed the inputs to the control system simulation object
-        self.dyn_focus_ctrl_sim.input["cam_dist"] = input1_cd
-        self.dyn_focus_ctrl_sim.input["beam_width"] = input2_bw
+        
+        # use "Centroid" defuzzifcation and get the crisp/defuzzified output
+        self.crisp_output = fuzz.defuzz(self.v_out, self.agg_out_mf, 
+					"centroid")
 
-        # run the flc control system simulation
-        self.dyn_focus_ctrl_sim.compute()
-        print("OUTPUT: FLC Output is: ", self.dyn_focus_ctrl_sim.output["out"])
-
-        # view the simulation results on graph
-        self.out.view(sim=self.dyn_focus_ctrl_sim)
-        plt.savefig("flc_output.png")
 
     def stop_flc(self):
         print("ALERT: FLC stopped running...")
-
-
-'''
-f = FuzzyController()
-f.setup()
-f.run_flc(48, 36000)
-f.stop_flc()
-'''
-
-
