@@ -64,7 +64,8 @@ class CameraFunctions():
         x, y, w, h = cv2.boundingRect(contour_count)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
         cood_x = x + (w / 2)
-        self.dist = -7.438e-05 * (cood_x * cood_x) - 0.02505 * (cood_x) + 31.12  # obtained using a small Numpy code
+        self.dist = -0.000124 * (cood_x*cood_x) - 0.04176*(cood_x) + 51.87  # for 50 cms
+        #self.dist = -7.438e-05 * (cood_x * cood_x) - 0.02505 * (cood_x) + 31.12  # obtained using a small Numpy code
         #frame = cv2.putText(frame, str(self.dist), (80, 30), self.font, 1, (0, 0, 255), 2, cv2.LINE_AA)
         return self.dist
 
@@ -87,16 +88,7 @@ class CameraFunctions():
         frame = cv2.putText(frame, "Dist:", (10, 30), self.font, 1, (0, 0, 255), 2, cv2.LINE_AA)
         frame = cv2.putText(frame, "(in cms)", (500, 470), self.font, 1, (0, 0, 255), 2, cv2.LINE_AA)
         frame = cv2.putText(frame, "0", (590, 450), self.font, 1, (0, 0, 255), 2, cv2.LINE_AA)
-        frame = cv2.putText(frame, "7.5", (430, 450), self.font, 1, (0, 0, 255), 2, cv2.LINE_AA)
-        frame = cv2.putText(frame, "15", (290, 450), self.font, 1, (0, 0, 255), 2, cv2.LINE_AA)
-        frame = cv2.putText(frame, "22.5", (140, 450), self.font, 1, (0, 0, 255), 2, cv2.LINE_AA)
-        frame = cv2.putText(frame, "30", (20, 450), self.font, 1, (0, 0, 255), 2, cv2.LINE_AA)
-
-
-
-
-
-
-
-
-
+        frame = cv2.putText(frame, "12.5", (430, 450), self.font, 1, (0, 0, 255), 2, cv2.LINE_AA)
+        frame = cv2.putText(frame, "25", (290, 450), self.font, 1, (0, 0, 255), 2, cv2.LINE_AA)
+        frame = cv2.putText(frame, "37.5", (140, 450), self.font, 1, (0, 0, 255), 2, cv2.LINE_AA)
+        frame = cv2.putText(frame, "50", (20, 450), self.font, 1, (0, 0, 255), 2, cv2.LINE_AA)
